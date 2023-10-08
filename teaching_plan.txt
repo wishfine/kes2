@@ -1,26 +1,27 @@
-Semester 1:
-c0
-c1
+学期 1:
 c15
-c16
-c17
-Semester 2:
-c18
-c2
-c20
-c3
-Semester 3:
-c4
+c8
 c5
+c4
+学期 2:
+c0
+学期 3:
+c1
 c6
 c7
-Semester 4:
-c8
 c11
+c16
+学期 4:
+c18
+c17
 c12
-c13
-c14
-Semester 5:
-c19
 c9
+c2
+学期 5:
+c3
 c10
+c19
+c14
+c13
+学期 6:
+c20
