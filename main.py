@@ -38,12 +38,7 @@ def read_input_file(filename):
         print("输入格式错误。请检查输入文件。")
         exit(1)
 
-def build_course_graph(course_info):
-    course_graph = defaultdict(list)
-    for course_id, course in course_info.items():
-        for prereq_id in course.prereqs:
-            course_graph[prereq_id].append(course_id)
-    return course_graph
+
 
 def topological_sort(course_graph):
     in_degree = defaultdict(int)
