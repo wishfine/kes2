@@ -94,13 +94,15 @@ def generate_teaching_plan(topological_order, max_credits_per_semester):
 
     return teaching_plan
 
-def output_teaching_plan(teaching_plan, semester_credits, output_filename):
+def output_teaching_plan(teaching_plan, semester_credits, course_info, output_filename):
     with open(output_filename, 'w') as file:
         for semester_number, courses in teaching_plan.items():
             file.write(f"学期 {semester_number}:\n")
-            file.write(f"所修学分: {semester_credits[semester_number]:.2f}\n")  # 修正：保留两位小数
+            file.write(f"所修学分: {semester_credits[semester_number]:.2f}\n")
+            file.write("课程列表:\n")
             for course_id in courses:
-                file.write(f"{course_id}\n")
+                course = course_info[course_id]
+                file.write(f"{course_id} - {course.credits} 学分\n")
 
 if __name__ == "__main__":
     filename = "input.txt"
@@ -111,14 +113,14 @@ if __name__ == "__main__":
     # 初始化学期号和学分
     semester_number = 1
     semester_credits = defaultdict(float)
-    course_semesters = {}  # 修正：添加这行来定义course_semesters
+    course_semesters = {}
 
     # 用于存储每个学期的课程
     teaching_plan = defaultdict(list)
 
     for course_id in topological_order:
         course = course_info[course_id]
-        prereq_semesters = [course_semesters.get(prereq_id, 0) for prereq_id in course.prereqs]  # 修正：修正获取先修课程的学期号
+        prereq_semesters = [course_semesters.get(prereq_id, 0) for prereq_id in course.prereqs]
 
         # 更新学期号
         if prereq_semesters and max(prereq_semesters) == semester_number:
@@ -136,6 +138,7 @@ if __name__ == "__main__":
         course_semesters[course_id] = semester_number
 
     output_filename = "teaching_plan.txt"
-    output_teaching_plan(teaching_plan, semester_credits, output_filename)
+    output_teaching_plan(teaching_plan, semester_credits, course_info, output_filename)
+
 
 
