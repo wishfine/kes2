@@ -94,24 +94,48 @@ def generate_teaching_plan(topological_order, max_credits_per_semester):
 
     return teaching_plan
 
-def output_teaching_plan(teaching_plan, output_filename):
+def output_teaching_plan(teaching_plan, semester_credits, output_filename):
     with open(output_filename, 'w') as file:
         for semester_number, courses in teaching_plan.items():
             file.write(f"学期 {semester_number}:\n")
+            file.write(f"所修学分: {semester_credits[semester_number]:.2f}\n")  # 修正：保留两位小数
             for course_id in courses:
                 file.write(f"{course_id}\n")
 
 if __name__ == "__main__":
     filename = "input.txt"
-    # 读取输入文件并获取学期数、每学期最大学分、课程信息和课程图
     semester_count, max_credits_per_semester, course_info, course_graph = read_input_file(filename)
 
-    # 拓扑排序
     topological_order = topological_sort(course_graph)
 
-    # 生成教学计划
-    teaching_plan = generate_teaching_plan(topological_order, max_credits_per_semester)
+    # 初始化学期号和学分
+    semester_number = 1
+    semester_credits = defaultdict(float)
+    course_semesters = {}  # 修正：添加这行来定义course_semesters
 
-    # 输出教学计划
+    # 用于存储每个学期的课程
+    teaching_plan = defaultdict(list)
+
+    for course_id in topological_order:
+        course = course_info[course_id]
+        prereq_semesters = [course_semesters.get(prereq_id, 0) for prereq_id in course.prereqs]  # 修正：修正获取先修课程的学期号
+
+        # 更新学期号
+        if prereq_semesters and max(prereq_semesters) == semester_number:
+            semester_number += 1
+            semester_credits[semester_number] = 0
+
+        # 检查学分限制
+        if semester_credits[semester_number] + course.credits > max_credits_per_semester:
+            semester_number += 1
+            semester_credits[semester_number] = 0
+
+        # 更新教学计划和学分
+        teaching_plan[semester_number].append(course_id)
+        semester_credits[semester_number] += course.credits
+        course_semesters[course_id] = semester_number
+
     output_filename = "teaching_plan.txt"
-    output_teaching_plan(teaching_plan, output_filename)
+    output_teaching_plan(teaching_plan, semester_credits, output_filename)
+
+
