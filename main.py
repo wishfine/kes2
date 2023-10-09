@@ -70,29 +70,36 @@ def topological_sort(course_graph):
 
     return topological_order
 
-def generate_teaching_plan(topological_order, max_credits_per_semester):
+def generate_teaching_plan(topological_order, max_credits_per_semester, max_semesters, course_info):
     teaching_plan = defaultdict(list)
-    semester_credits = 0
-    semester_number = 1
-    course_semesters = defaultdict(int)
+    semester_credits = defaultdict(float)
+    current_semester = 1
+    course_semesters = {}  # 定义课程的学期
 
     for course_id in topological_order:
         course = course_info[course_id]
-        prereq_semesters = [course_semesters[prereq_id] for prereq_id in course.prereqs]
+        prereq_semesters = [course_semesters.get(prereq_id, 0) for prereq_id in course.prerequisites]
 
-        if prereq_semesters and max(prereq_semesters) == semester_number:
-            semester_number += 1
-            semester_credits = 0
+        # 更新学期号
+        if prereq_semesters:
+            current_semester = max(prereq_semesters) + 1
 
-        if semester_credits + course.credits > max_credits_per_semester:
-            semester_number += 1
-            semester_credits = 0
+        # 检查学期数限制
+        if current_semester > max_semesters:
+            break
 
-        teaching_plan[semester_number].append(course_id)
-        semester_credits += course.credits
-        course_semesters[course_id] = semester_number
+        # 检查学分限制
+        if semester_credits[current_semester] + course.credits > max_credits_per_semester:
+            current_semester += 1
 
-    return teaching_plan
+        # 更新教学计划和学分
+        if current_semester <= max_semesters:
+            teaching_plan[current_semester].append((course_id, course.credits))
+            semester_credits[current_semester] += course.credits
+            course_semesters[course_id] = current_semester
+
+    return teaching_plan, semester_credits, course_semesters
+
 
 def output_teaching_plan(teaching_plan, semester_credits, course_info, output_filename):
     with open(output_filename, 'w') as file:
@@ -139,6 +146,3 @@ if __name__ == "__main__":
 
     output_filename = "teaching_plan.txt"
     output_teaching_plan(teaching_plan, semester_credits, course_info, output_filename)
-
-
-
