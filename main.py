@@ -1,11 +1,14 @@
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
 import re
 from collections import defaultdict
 
 class Course:
     def __init__(self, course_name, credits, prereqs):
-        self.course_name = course_name  # 中文课程名
-        self.credits = credits  # 学分
-        self.prereqs = prereqs  # 先修课程
+        self.course_name = course_name
+        self.credits = credits
+        self.prereqs = prereqs
 
 def read_input_file(filename):
     try:
@@ -15,10 +18,10 @@ def read_input_file(filename):
             course_info = {}
 
             for line in file:
-                items = line.strip().split('\t')  # 使用制表符分隔
-                course_name = items[0]  # 中文课程名
-                credits = float(items[1])  # 学分
-                prereq = [] if items[2] == '-' else items[2].split('，')  # 先修课程，使用中文逗号
+                items = line.strip().split('\t')
+                course_name = items[0]
+                credits = float(items[1])
+                prereq = [] if items[2] == '-' else items[2].split('，')
 
                 course = Course(course_name, credits, prereq)
                 course_info[course_name] = course
@@ -28,11 +31,11 @@ def read_input_file(filename):
 
             return semester_count, max_credits_per_semester, course_info, course_graph
     except FileNotFoundError:
-        print("找不到输入文件。")
-        exit(1)
+        messagebox.showerror("Error", "找不到输入文件。")
+        return None
     except ValueError:
-        print("输入格式错误。请检查输入文件。")
-        exit(1)
+        messagebox.showerror("Error", "输入格式错误。请检查输入文件。")
+        return None
 
 def topological_sort(course_graph):
     in_degree = defaultdict(int)
@@ -97,15 +100,55 @@ def output_teaching_plan(teaching_plan, semester_credits, course_info, output_fi
                 course = course_info[course_name]
                 file.write(f"{course.course_name} - {course.credits} 学分\n")
 
-if __name__ == "__main__":
-    filename = "input2.txt"
-    semester_count, max_credits_per_semester, course_info, course_graph = read_input_file(filename)
+def browse_input_file():
+    filename = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
+    input_filename.set(filename)
 
-    topological_order = topological_sort(course_graph)
+def browse_output_file():
+    filename = filedialog.asksaveasfilename(filetypes=[("Text Files", "*.txt")])
+    output_filename.set(filename)
 
-    teaching_plan, semester_credits, course_semesters = generate_teaching_plan(topological_order,
-                                                                               max_credits_per_semester, semester_count,
-                                                                               course_info)
+def generate_plan():
+    input_file = input_filename.get()
+    output_file = output_filename.get()
+    if not input_file or not output_file:
+        messagebox.showerror("Error", "请输入输入和输出文件名。")
+        return
 
-    output_filename = "teaching_plan2.txt"
-    output_teaching_plan(teaching_plan, semester_credits, course_info, output_filename)
+    try:
+        semester_count, max_credits_per_semester, course_info, course_graph = read_input_file(input_file)
+        if semester_count is not None:
+            topological_order = topological_sort(course_graph)
+            teaching_plan, semester_credits, course_semesters = generate_teaching_plan(topological_order,
+                                                                                       max_credits_per_semester, semester_count,
+                                                                                       course_info)
+            output_teaching_plan(teaching_plan, semester_credits, course_info, output_file)
+            messagebox.showinfo("Success", "教学计划已生成成功！")
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+
+# 创建主窗口
+window = tk.Tk()
+window.title("课程教学计划生成器")
+
+# 创建标签和输入框
+tk.Label(window, text="输入文件：").grid(row=0, column=0)
+input_filename = tk.StringVar()
+input_entry = tk.Entry(window, textvariable=input_filename)
+input_entry.grid(row=0, column=1)
+tk.Label(window, text="输出文件：").grid(row=1, column=0)
+output_filename = tk.StringVar()
+output_entry = tk.Entry(window, textvariable=output_filename)
+output_entry.grid(row=1, column=1)
+
+# 创建浏览文件按钮
+browse_input_button = tk.Button(window, text="浏览", command=browse_input_file)
+browse_input_button.grid(row=0, column=2)
+browse_output_button = tk.Button(window, text="浏览", command=browse_output_file)
+browse_output_button.grid(row=1, column=2)
+
+# 创建生成按钮
+generate_button = tk.Button(window, text="生成教学计划", command=generate_plan)
+generate_button.grid(row=2, column=0, columnspan=3)
+
+window.mainloop()
