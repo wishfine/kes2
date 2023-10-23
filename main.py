@@ -131,24 +131,28 @@ def generate_plan():
 window = tk.Tk()
 window.title("课程教学计划生成器")
 
+# 设置窗口尺寸
+window.geometry("400x200")
+
 # 创建标签和输入框
-tk.Label(window, text="输入文件：").grid(row=0, column=0)
+tk.Label(window, text="输入文件：").grid(row=0, column=0, padx=10, pady=10)
 input_filename = tk.StringVar()
-input_entry = tk.Entry(window, textvariable=input_filename)
-input_entry.grid(row=0, column=1)
-tk.Label(window, text="输出文件：").grid(row=1, column=0)
+input_entry = tk.Entry(window, textvariable=input_filename, width=30)
+input_entry.grid(row=0, column=1, padx=10, pady=10)
+tk.Label(window, text="输出文件：").grid(row=1, column=0, padx=10, pady=10)
 output_filename = tk.StringVar()
-output_entry = tk.Entry(window, textvariable=output_filename)
-output_entry.grid(row=1, column=1)
+output_entry = tk.Entry(window, textvariable=output_filename, width=30)
+output_entry.grid(row=1, column=1, padx=10, pady=10)
 
 # 创建浏览文件按钮
 browse_input_button = tk.Button(window, text="浏览", command=browse_input_file)
-browse_input_button.grid(row=0, column=2)
+browse_input_button.grid(row=0, column=2, padx=10, pady=10)
 browse_output_button = tk.Button(window, text="浏览", command=browse_output_file)
-browse_output_button.grid(row=1, column=2)
+browse_output_button.grid(row=1, column=2, padx=10, pady=10)
 
 # 创建生成按钮
-generate_button = tk.Button(window, text="生成教学计划", command=generate_plan)
-generate_button.grid(row=2, column=0, columnspan=3)
+generate_button = tk.Button(window, text="生成教学计划", command=generate_plan, width=30, height=2)
+generate_button.grid(row=2, column=0, columnspan=3, pady=10)
 
+# 运行主循环
 window.mainloop()
