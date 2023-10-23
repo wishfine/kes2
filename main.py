@@ -102,6 +102,7 @@ def generate_teaching_plan(topological_order, max_credits_per_semester, max_seme
             semester_number += 1
             semester_credits[semester_number] = 0
 
+
         # 更新教学计划和学分
         teaching_plan[semester_number].append(course_id)
         semester_credits[semester_number] += course.credits
