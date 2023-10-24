@@ -11,7 +11,6 @@ class Course:
         self.credits = credits
         self.prereqs = prereqs
 
-
 def read_input_file(filename):
     try:
         with open(filename, 'r', encoding='utf-8') as file:
