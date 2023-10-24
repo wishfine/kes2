@@ -38,7 +38,6 @@ def read_input_file(filename):
         messagebox.showerror("Error", "输入格式错误。请检查输入文件。")
         return None
 
-
 def topological_sort(course_graph):
     in_degree = defaultdict(int)
     for node in course_graph:
