@@ -171,6 +171,7 @@ def generate_plan():
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
+
 # 创建主窗口
 window = tk.Tk()
 window.title("课程教学计划生成器")
