@@ -4,7 +4,6 @@ from tkinter import messagebox
 import re
 from collections import defaultdict
 
-
 class Course:
     def __init__(self, course_name, credits, prereqs):
         self.course_name = course_name
@@ -67,7 +66,6 @@ def topological_sort(course_graph):
 
     return topological_order
 
-
 def generate_teaching_plan(topological_order, max_credits_per_semester, max_semesters, course_info):
     semester_number = 1
     semester_credits = defaultdict(float)
@@ -91,11 +89,9 @@ def generate_teaching_plan(topological_order, max_credits_per_semester, max_seme
 
     return teaching_plan, semester_credits, course_semesters
 
-
-# 添加一个新的生成教学计划函数，以实现平衡学分的方式
 def generate_balanced_teaching_plan(topological_order, max_credits_per_semester, max_semesters, course_info):
     semester_number = 1
-    course_queue = list(topological_order)  # 创建课程队列
+    course_queue = list(topological_order)
     semester_credits = defaultdict(float)
     course_semesters = {}
     teaching_plan = defaultdict(list)
@@ -120,7 +116,6 @@ def generate_balanced_teaching_plan(topological_order, max_credits_per_semester,
 
     return teaching_plan, semester_credits, course_semesters
 
-
 def output_teaching_plan(teaching_plan, semester_credits, course_info, output_filename):
     with open(output_filename, 'w', encoding='utf-8') as file:
         for semester_number, courses in teaching_plan.items():
@@ -131,21 +126,18 @@ def output_teaching_plan(teaching_plan, semester_credits, course_info, output_fi
                 course = course_info[course_name]
                 file.write(f"{course.course_name} - {course.credits} 学分\n")
 
-
 def browse_input_file():
     filename = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
     input_filename.set(filename)
-
 
 def browse_output_file():
     filename = filedialog.asksaveasfilename(filetypes=[("Text Files", "*.txt")])
     output_filename.set(filename)
 
-
 def generate_plan():
     input_file = input_filename.get()
     output_file = output_filename.get()
-    plan_type = generate_mode.get()  # 获取用户选择的生成方式
+    plan_type = generate_mode.get()
     if not input_file or not output_file:
         messagebox.showerror("Error", "请输入输入和输出文件名。")
         return
@@ -171,15 +163,10 @@ def generate_plan():
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
-
-# 创建主窗口
 window = tk.Tk()
 window.title("课程教学计划生成器")
-
-# 设置窗口尺寸
 window.geometry("400x250")
 
-# 创建标签和输入框
 tk.Label(window, text="输入文件：").grid(row=0, column=0, padx=10, pady=10)
 input_filename = tk.StringVar()
 input_entry = tk.Entry(window, textvariable=input_filename, width=30)
@@ -189,25 +176,21 @@ output_filename = tk.StringVar()
 output_entry = tk.Entry(window, textvariable=output_filename, width=30)
 output_entry.grid(row=1, column=1, padx=10, pady=10)
 
-# 创建浏览文件按钮
 browse_input_button = tk.Button(window, text="浏览", command=browse_input_file)
 browse_input_button.grid(row=0, column=2, padx=10, pady=10)
 browse_output_button = tk.Button(window, text="浏览", command=browse_output_file)
 browse_output_button.grid(row=1, column=2, padx=10, pady=10)
 
-# 创建生成方式的下拉菜单
 generate_mode_label = tk.Label(window, text="生成方式:")
 generate_mode_label.grid(row=2, column=0, padx=10, pady=10)
 
 generate_mode = tk.StringVar()
-generate_mode.set("尽快修完所有课程")  # 默认选择第一种方式
+generate_mode.set("尽快修完所有课程")
 
 generate_mode_menu = tk.OptionMenu(window, generate_mode, "尽快修完所有课程", "每学期学习负担尽可能相同")
 generate_mode_menu.grid(row=2, column=1, padx=10, pady=10)
 
-# 创建生成按钮
 generate_button = tk.Button(window, text="生成教学计划", command=generate_plan, width=30, height=2)
 generate_button.grid(row=3, column=0, columnspan=3, pady=10)
 
-# 运行主循环
 window.mainloop()
