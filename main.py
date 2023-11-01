@@ -159,26 +159,13 @@ def generate_plan():
                                                                                                     course_info)
 
             output_teaching_plan(teaching_plan, semester_credits, course_info, output_file)
-
-            # 添加以下代码以显示有向无环图和拓扑子集划分情况
-            graph_info = "有向无环图 (DAG):\n"
-            for course, prereqs in course_graph.items():
-                graph_info += f"{course} -> {', '.join(prereqs)}\n"
-
-            subset_info = "拓扑子集划分情况:\n"
-            for semester, courses in teaching_plan.items():
-                subset_info += f"学期 {semester}: {', '.join(courses)}\n"
-
-            output_text.delete(1.0, tk.END)  # 清空文本框内容
-            output_text.insert(tk.END, graph_info + "\n" + subset_info)  # 显示有向无环图和拓扑子集划分情况
-
             messagebox.showinfo("Success", "教学计划已生成成功！")
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
 window = tk.Tk()
 window.title("课程教学计划生成器")
-window.geometry("600x400")
+window.geometry("400x250")
 
 tk.Label(window, text="输入文件：").grid(row=0, column=0, padx=10, pady=10)
 input_filename = tk.StringVar()
@@ -205,11 +192,5 @@ generate_mode_menu.grid(row=2, column=1, padx=10, pady=10)
 
 generate_button = tk.Button(window, text="生成教学计划", command=generate_plan, width=30, height=2)
 generate_button.grid(row=3, column=0, columnspan=3, pady=10)
-
-# 添加一个新标签和文本框来显示有向无环图和拓扑子集划分情况
-output_label = tk.Label(window, text="有向无环图和拓扑子集划分情况:")
-output_label.grid(row=4, column=0, padx=10, pady=10, columnspan=3)
-output_text = tk.Text(window, height=10, width=60)
-output_text.grid(row=5, column=0, padx=10, pady=10, columnspan=3)
 
 window.mainloop()
