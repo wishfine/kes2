@@ -89,38 +89,43 @@ def generate_teaching_plan(topological_order, max_credits_per_semester, max_seme
 
     return teaching_plan, semester_credits, course_semesters
 
-def generate_balanced_teaching_plan(topological_order, max_credits_per_semester, max_semesters, course_info):
+def generate_balanced_teaching_plan_v2(topological_order, max_credits_per_semester, max_semesters, course_info):
     semester_number = 1
-    course_queue = list(topological_order)
-    semester_credits = defaultdict(float)
     course_semesters = {}
+    remaining_credits = defaultdict(float)
     teaching_plan = defaultdict(list)
 
-    while course_queue:
-        current_course = course_queue.pop(0)
-        course = course_info[current_course]
+    for course_name in topological_order:
+        course = course_info[course_name]
         prereq_semesters = [course_semesters.get(prereq_name, 0) for prereq_name in course.prereqs]
 
-        if prereq_semesters and max(prereq_semesters) == semester_number:
+        while semester_number <= max_semesters:
+            if prereq_semesters and max(prereq_semesters) == semester_number:
+                semester_number += 1
+            else:
+                break
+
+        if semester_number > max_semesters:
+            raise Exception("无法满足学分限制和课程先修条件。")
+
+        if remaining_credits[semester_number] + course.credits > max_credits_per_semester:
+            remaining_credits[semester_number] = 0
             semester_number += 1
-            semester_credits[semester_number] = 0
 
-        while semester_credits[semester_number] + course.credits > max_credits_per_semester:
-            semester_number += 1
-            if semester_number > max_semesters:
-                raise Exception("无法满足学分限制和课程先修条件。")
+        if semester_number > max_semesters:
+            raise Exception("无法满足学分限制和课程先修条件。")
 
-        teaching_plan[semester_number].append(current_course)
-        semester_credits[semester_number] += course.credits
-        course_semesters[current_course] = semester_number
+        teaching_plan[semester_number].append(course_name)
+        remaining_credits[semester_number] += course.credits
+        course_semesters[course_name] = semester_number
 
-    return teaching_plan, semester_credits, course_semesters
+    return teaching_plan, course_semesters
 
-def output_teaching_plan(teaching_plan, semester_credits, course_info, output_filename):
+def output_teaching_plan(teaching_plan, course_info, output_filename):
     with open(output_filename, 'w', encoding='utf-8') as file:
         for semester_number, courses in teaching_plan.items():
             file.write(f"学期 {semester_number}:\n")
-            file.write(f"所修学分: {semester_credits[semester_number]:.2f}\n")
+            file.write(f"所修学分: {sum(course_info[course_name].credits for course_name in courses):.2f}\n")
             file.write("课程列表:\n")
             for course_name in courses:
                 course = course_info[course_name]
@@ -153,12 +158,12 @@ def generate_plan():
                                                                                            semester_count,
                                                                                            course_info)
             elif plan_type == "每学期学习负担尽可能相同":
-                teaching_plan, semester_credits, course_semesters = generate_balanced_teaching_plan(topological_order,
-                                                                                                    max_credits_per_semester,
-                                                                                                    semester_count,
-                                                                                                    course_info)
+                teaching_plan, course_semesters = generate_balanced_teaching_plan_v2(topological_order,
+                                                                                    max_credits_per_semester,
+                                                                                    semester_count,
+                                                                                    course_info)
 
-            output_teaching_plan(teaching_plan, semester_credits, course_info, output_file)
+            output_teaching_plan(teaching_plan, course_info, output_file)
             messagebox.showinfo("Success", "教学计划已生成成功！")
     except Exception as e:
         messagebox.showerror("Error", str(e))
