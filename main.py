@@ -9,6 +9,7 @@ class Course:
         self.course_name = course_name
         self.credits = credits
         self.prereqs = prereqs
+        self.semester = 0  # 新增属性，表示该课程在第几学期
 
 class TeachingPlanGenerator(QWidget):
     def __init__(self):
@@ -107,10 +108,12 @@ class TeachingPlanGenerator(QWidget):
                 max_semesters = max(course_semesters.values())
 
                 for semester_number in range(1, max_semesters + 1):
-                    courses_in_semester = [course_name for course_name, semester in course_semesters.items() if semester == semester_number]
+                    courses_in_semester = [course_name for course_name, semester in course_semesters.items() if
+                                           semester == semester_number]
 
                     if semester_number == 1:
-                        dot.node(f"Semester {semester_number}\n{', '.join(courses_in_semester)}", shape='box', style='filled', color='lightblue')
+                        dot.node(f"Semester {semester_number}\n{', '.join(courses_in_semester)}", shape='box',
+                                 style='filled', color='lightblue')
                     else:
                         dot.node(f"Semester {semester_number}\n{', '.join(courses_in_semester)}", shape='box')
 
@@ -118,12 +121,14 @@ class TeachingPlanGenerator(QWidget):
                         for course_name in courses_in_semester:
                             for prereq_name in course_info[course_name].prereqs:
                                 if course_semesters[prereq_name] < semester_number:
-                                    dot.edge(f"Semester {course_semesters[prereq_name]}\n{prereq_name}", f"Semester {semester_number}\n{course_name}")
+                                    dot.edge(f"Semester {course_semesters[prereq_name]}\n{prereq_name}",
+                                             f"Semester {semester_number}\n{course_name}")
 
-                dot.render(output_file, view=True)
+                dot.render(output_file, format='png', cleanup=True)
                 QMessageBox.information(self, "成功", "有向图已生成成功！")
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
+
 
 def read_input_file(filename):
     try:
@@ -196,7 +201,8 @@ def generate_teaching_plan(topological_order, max_credits_per_semester, max_seme
         if semester_number > max_semesters:
             raise Exception("无法满足学分限制和课程先修条件。")
 
-        teaching_plan[semester_number].append(course_name)
+        course.semester = semester_number  # 更新课程的学期信息
+        teaching_plan[semester_number].append(course)
         semester_credits[semester_number] += course.credits
         course_semesters[course_name] = semester_number
 
@@ -228,7 +234,8 @@ def generate_balanced_teaching_plan_v2(topological_order, max_credits_per_semest
         if semester_number > max_semesters:
             raise Exception("无法满足学分限制和课程先修条件。")
 
-        teaching_plan[semester_number].append(course_name)
+        course.semester = semester_number  # 更新课程的学期信息
+        teaching_plan[semester_number].append(course)
         remaining_credits[semester_number] += course.credits
         course_semesters[course_name] = semester_number
 
@@ -236,12 +243,13 @@ def generate_balanced_teaching_plan_v2(topological_order, max_credits_per_semest
 
 def output_teaching_plan(teaching_plan, course_info, output_filename):
     with open(output_filename, 'w', encoding='utf-8') as file:
-        for semester_number, courses in teaching_plan.items():
+        max_semester = max(teaching_plan.keys())
+        for semester_number in range(1, max_semester + 1):
+            courses = teaching_plan[semester_number]
             file.write(f"学期 {semester_number}:\n")
-            file.write(f"所修学分: {sum(course_info[course_name].credits for course_name in courses):.2f}\n")
+            file.write(f"所修学分: {sum(course.credits for course in courses):.2f}\n")
             file.write("课程列表:\n")
-            for course_name in courses:
-                course = course_info[course_name]
+            for course in courses:
                 file.write(f"{course.course_name} - {course.credits} 学分\n")
 
 if __name__ == '__main__':
