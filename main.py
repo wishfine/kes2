@@ -1,14 +1,89 @@
-import tkinter as tk
-from tkinter import filedialog
-from tkinter import messagebox
-import re
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QHBoxLayout, QComboBox, QMessageBox
+from PyQt5.QtCore import Qt
 from collections import defaultdict
+import re
 
 class Course:
     def __init__(self, course_name, credits, prereqs):
         self.course_name = course_name
         self.credits = credits
         self.prereqs = prereqs
+
+class TeachingPlanGenerator(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.init_ui()
+
+    def init_ui(self):
+        self.input_filename = QLineEdit(self)
+        self.output_filename = QLineEdit(self)
+        self.generate_mode_combo = QComboBox(self)
+        self.generate_mode_combo.addItems(["尽快修完所有课程", "每学期学习负担尽可能相同"])
+
+        browse_input_button = QPushButton("浏览", self)
+        browse_output_button = QPushButton("浏览", self)
+
+        browse_input_button.clicked.connect(self.browse_input_file)
+        browse_output_button.clicked.connect(self.browse_output_file)
+
+        generate_button = QPushButton("生成教学计划", self)
+        generate_button.clicked.connect(self.generate_plan)
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("输入文件："))
+        layout.addWidget(self.input_filename)
+        layout.addWidget(browse_input_button)
+        layout.addWidget(QLabel("输出文件："))
+        layout.addWidget(self.output_filename)
+        layout.addWidget(browse_output_button)
+        layout.addWidget(QLabel("生成方式:"))
+        layout.addWidget(self.generate_mode_combo)
+        layout.addWidget(generate_button)
+
+        self.setLayout(layout)
+        self.setWindowTitle("课程教学计划生成器")
+        self.setGeometry(300, 300, 400, 250)
+
+    def browse_input_file(self):
+        filename, _ = QFileDialog.getOpenFileName(self, "选择输入文件", "", "Text Files (*.txt)")
+        self.input_filename.setText(filename)
+
+    def browse_output_file(self):
+        filename, _ = QFileDialog.getSaveFileName(self, "选择输出文件", "", "Text Files (*.txt)")
+        self.output_filename.setText(filename)
+
+    def generate_plan(self):
+        input_file = self.input_filename.text()
+        output_file = self.output_filename.text()
+        plan_type = self.generate_mode_combo.currentText()
+
+        if not input_file or not output_file:
+            QMessageBox.critical(self, "错误", "请输入输入和输出文件名。")
+            return
+
+        try:
+            semester_count, max_credits_per_semester, course_info, course_graph = read_input_file(input_file)
+
+            if semester_count is not None:
+                topological_order = topological_sort(course_graph)
+
+                if plan_type == "尽快修完所有课程":
+                    teaching_plan, semester_credits, course_semesters = generate_teaching_plan(topological_order,
+                                                                                                max_credits_per_semester,
+                                                                                                semester_count,
+                                                                                                course_info)
+                elif plan_type == "每学期学习负担尽可能相同":
+                    teaching_plan, course_semesters = generate_balanced_teaching_plan_v2(topological_order,
+                                                                                        max_credits_per_semester,
+                                                                                        semester_count,
+                                                                                        course_info)
+
+                output_teaching_plan(teaching_plan, course_info, output_file)
+                QMessageBox.information(self, "成功", "教学计划已生成成功！")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", str(e))
 
 def read_input_file(filename):
     try:
@@ -31,11 +106,9 @@ def read_input_file(filename):
 
             return semester_count, max_credits_per_semester, course_info, course_graph
     except FileNotFoundError:
-        messagebox.showerror("Error", "找不到输入文件。")
-        return None
+        raise Exception("找不到输入文件。")
     except ValueError:
-        messagebox.showerror("Error", "输入格式错误。请检查输入文件。")
-        return None
+        raise Exception("输入格式错误。请检查输入文件。")
 
 def topological_sort(course_graph):
     in_degree = defaultdict(int)
@@ -131,71 +204,8 @@ def output_teaching_plan(teaching_plan, course_info, output_filename):
                 course = course_info[course_name]
                 file.write(f"{course.course_name} - {course.credits} 学分\n")
 
-def browse_input_file():
-    filename = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
-    input_filename.set(filename)
-
-def browse_output_file():
-    filename = filedialog.asksaveasfilename(filetypes=[("Text Files", "*.txt")])
-    output_filename.set(filename)
-
-def generate_plan():
-    input_file = input_filename.get()
-    output_file = output_filename.get()
-    plan_type = generate_mode.get()
-    if not input_file or not output_file:
-        messagebox.showerror("Error", "请输入输入和输出文件名。")
-        return
-
-    try:
-        semester_count, max_credits_per_semester, course_info, course_graph = read_input_file(input_file)
-        if semester_count is not None:
-            topological_order = topological_sort(course_graph)
-
-            if plan_type == "尽快修完所有课程":
-                teaching_plan, semester_credits, course_semesters = generate_teaching_plan(topological_order,
-                                                                                           max_credits_per_semester,
-                                                                                           semester_count,
-                                                                                           course_info)
-            elif plan_type == "每学期学习负担尽可能相同":
-                teaching_plan, course_semesters = generate_balanced_teaching_plan_v2(topological_order,
-                                                                                    max_credits_per_semester,
-                                                                                    semester_count,
-                                                                                    course_info)
-
-            output_teaching_plan(teaching_plan, course_info, output_file)
-            messagebox.showinfo("Success", "教学计划已生成成功！")
-    except Exception as e:
-        messagebox.showerror("Error", str(e))
-
-window = tk.Tk()
-window.title("课程教学计划生成器")
-window.geometry("400x250")
-
-tk.Label(window, text="输入文件：").grid(row=0, column=0, padx=10, pady=10)
-input_filename = tk.StringVar()
-input_entry = tk.Entry(window, textvariable=input_filename, width=30)
-input_entry.grid(row=0, column=1, padx=10, pady=10)
-tk.Label(window, text="输出文件：").grid(row=1, column=0, padx=10, pady=10)
-output_filename = tk.StringVar()
-output_entry = tk.Entry(window, textvariable=output_filename, width=30)
-output_entry.grid(row=1, column=1, padx=10, pady=10)
-
-browse_input_button = tk.Button(window, text="浏览", command=browse_input_file)
-browse_input_button.grid(row=0, column=2, padx=10, pady=10)
-browse_output_button = tk.Button(window, text="浏览", command=browse_output_file)
-browse_output_button.grid(row=1, column=2, padx=10, pady=10)
-
-generate_mode_label = tk.Label(window, text="生成方式:")
-generate_mode_label.grid(row=2, column=0, padx=10, pady=10)
-
-generate_mode = tk.StringVar()
-generate_mode.set("尽快修完所有课程")
-
-generate_mode_menu = tk.OptionMenu(window, generate_mode, "尽快修完所有课程", "每学期学习负担尽可能相同")
-generate_mode_menu.grid(row=2, column=1, padx=10, pady=10)
-
-generate_button = tk.Button(window, text="生成教学计划", command=generate_plan, width=30, height=2)
-generate_button.grid(row=3, column=0, columnspan=3, pady=10)
-
-window.mainloop()
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = TeachingPlanGenerator()
+    window.show()
+    sys.exit(app.exec_())
