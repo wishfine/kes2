@@ -1,8 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QHBoxLayout, QComboBox, QMessageBox
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QComboBox, QMessageBox
 from collections import defaultdict
 import re
+import graphviz
 
 class Course:
     def __init__(self, course_name, credits, prereqs):
@@ -31,6 +31,9 @@ class TeachingPlanGenerator(QWidget):
         generate_button = QPushButton("生成教学计划", self)
         generate_button.clicked.connect(self.generate_plan)
 
+        generate_graph_button = QPushButton("生成有向图", self)
+        generate_graph_button.clicked.connect(self.generate_graph)
+
         layout = QVBoxLayout()
         layout.addWidget(QLabel("输入文件："))
         layout.addWidget(self.input_filename)
@@ -41,10 +44,11 @@ class TeachingPlanGenerator(QWidget):
         layout.addWidget(QLabel("生成方式:"))
         layout.addWidget(self.generate_mode_combo)
         layout.addWidget(generate_button)
+        layout.addWidget(generate_graph_button)
 
         self.setLayout(layout)
         self.setWindowTitle("课程教学计划生成器")
-        self.setGeometry(300, 300, 400, 250)
+        self.setGeometry(300, 300, 400, 300)
 
     def browse_input_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "选择输入文件", "", "Text Files (*.txt)")
@@ -82,6 +86,42 @@ class TeachingPlanGenerator(QWidget):
 
                 output_teaching_plan(teaching_plan, course_info, output_file)
                 QMessageBox.information(self, "成功", "教学计划已生成成功！")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", str(e))
+
+    def generate_graph(self,course_semesters):
+        input_file = self.input_filename.text()
+        output_file = self.output_filename.text()
+
+        if not input_file or not output_file:
+            QMessageBox.critical(self, "错误", "请输入输入和输出文件名。")
+            return
+
+        try:
+            semester_count, max_credits_per_semester, course_info, course_graph = read_input_file(input_file)
+
+            if semester_count is not None:
+                dot = graphviz.Digraph(format='png')
+
+                topological_order = topological_sort(course_graph)
+                max_semesters = max(course_semesters.values())
+
+                for semester_number in range(1, max_semesters + 1):
+                    courses_in_semester = [course_name for course_name, semester in course_semesters.items() if semester == semester_number]
+
+                    if semester_number == 1:
+                        dot.node(f"Semester {semester_number}\n{', '.join(courses_in_semester)}", shape='box', style='filled', color='lightblue')
+                    else:
+                        dot.node(f"Semester {semester_number}\n{', '.join(courses_in_semester)}", shape='box')
+
+                    if semester_number > 1:
+                        for course_name in courses_in_semester:
+                            for prereq_name in course_info[course_name].prereqs:
+                                if course_semesters[prereq_name] < semester_number:
+                                    dot.edge(f"Semester {course_semesters[prereq_name]}\n{prereq_name}", f"Semester {semester_number}\n{course_name}")
+
+                dot.render(output_file, view=True)
+                QMessageBox.information(self, "成功", "有向图已生成成功！")
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
 
