@@ -44,12 +44,14 @@ class TeachingPlanGenerator(QWidget):
         layout.addWidget(browse_output_button)
         layout.addWidget(QLabel("生成方式:"))
         layout.addWidget(self.generate_mode_combo)
+        self.generate_mode_combo.setFixedWidth(600)  # 设置宽度为200像素
+        self.generate_mode_combo.setFixedHeight(60)  # 设置高度为30像素
         layout.addWidget(generate_button)
         layout.addWidget(generate_graph_button)
 
         self.setLayout(layout)
         self.setWindowTitle("课程教学计划生成器")
-        self.setGeometry(300, 300, 400, 300)
+        self.setGeometry(600, 600, 800, 600)
 
     def browse_input_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "选择输入文件", "", "Text Files (*.txt)")
