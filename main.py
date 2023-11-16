@@ -1,8 +1,10 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QComboBox, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QComboBox, \
+    QScrollArea, QTextBrowser, QMessageBox
 from collections import defaultdict
 import re
 import graphviz
+
 
 class Course:
     def __init__(self, course_name, credits, prereqs):
@@ -10,6 +12,7 @@ class Course:
         self.credits = credits
         self.prereqs = prereqs
         self.semester = 0
+
 
 class TeachingPlanGenerator(QWidget):
     def __init__(self):
@@ -35,6 +38,9 @@ class TeachingPlanGenerator(QWidget):
         generate_graph_button = QPushButton("生成有向图", self)
         generate_graph_button.clicked.connect(self.generate_graph)
 
+        self.teaching_plan_browser = QTextBrowser(self)
+        self.teaching_plan_browser.setOpenExternalLinks(True)
+
         layout = QVBoxLayout()
         layout.addWidget(QLabel("输入文件："))
         layout.addWidget(self.input_filename)
@@ -49,9 +55,11 @@ class TeachingPlanGenerator(QWidget):
         layout.addWidget(generate_button)
         layout.addWidget(generate_graph_button)
 
-        self.teaching_plan_label = QLabel(self)
-        self.teaching_plan_label.setWordWrap(True)
-        layout.addWidget(self.teaching_plan_label)
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(self.teaching_plan_browser)
+
+        layout.addWidget(scroll_area)
 
         self.setLayout(layout)
         self.setWindowTitle("课程教学计划生成器")
@@ -108,7 +116,7 @@ class TeachingPlanGenerator(QWidget):
             for course in courses:
                 details_text += f"{course.course_name} - {course.credits} 学分\n"
 
-        self.teaching_plan_label.setText(details_text)
+        self.teaching_plan_browser.setPlainText(details_text)
 
     def generate_graph(self,course_semesters):
         input_file = self.input_filename.text()
@@ -149,6 +157,7 @@ class TeachingPlanGenerator(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
 
+
 def read_input_file(filename):
     try:
         with open(filename, 'r', encoding='utf-8') as file:
@@ -173,6 +182,7 @@ def read_input_file(filename):
         raise Exception("找不到输入文件。")
     except ValueError:
         raise Exception("输入格式错误。请检查输入文件。")
+
 
 def topological_sort(course_graph):
     in_degree = defaultdict(int)
@@ -203,6 +213,7 @@ def topological_sort(course_graph):
 
     return topological_order
 
+
 def generate_teaching_plan(topological_order, max_credits_per_semester, max_semesters, course_info):
     semester_number = 1
     semester_credits = defaultdict(float)
@@ -226,6 +237,7 @@ def generate_teaching_plan(topological_order, max_credits_per_semester, max_seme
         course_semesters[course_name] = semester_number
 
     return teaching_plan, semester_credits, course_semesters
+
 
 def generate_balanced_teaching_plan_v2(topological_order, max_credits_per_semester, max_semesters, course_info):
     semester_number = 1
@@ -260,6 +272,7 @@ def generate_balanced_teaching_plan_v2(topological_order, max_credits_per_semest
 
     return teaching_plan, course_semesters
 
+
 def output_teaching_plan(teaching_plan, course_info, output_filename):
     with open(output_filename, 'w', encoding='utf-8') as file:
         max_semester = max(teaching_plan.keys())
@@ -270,6 +283,7 @@ def output_teaching_plan(teaching_plan, course_info, output_filename):
             file.write("课程列表:\n")
             for course in courses:
                 file.write(f"{course.course_name} - {course.credits} 学分\n")
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
