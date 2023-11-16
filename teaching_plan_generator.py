@@ -1,7 +1,7 @@
 # teaching_plan_generator.py
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QComboBox, \
-    QTableWidget, QTableWidgetItem, QDialog, QFormLayout, QMessageBox
+    QDialog, QFormLayout, QTableWidget, QTableWidgetItem, QMessageBox
 from collections import defaultdict
 import re
 import graphviz
@@ -42,12 +42,6 @@ class TeachingPlanGenerator(QWidget):
         show_table_button = QPushButton("显示课表", self)
         show_table_button.clicked.connect(self.show_table)
 
-        self.modify_course_button = QPushButton("修改课程", self)
-        self.modify_course_button.clicked.connect(self.modify_courses)
-
-        self.modify_max_credits_button = QPushButton("修改每学期最大学分限制", self)
-        self.modify_max_credits_button.clicked.connect(self.modify_max_credits)
-
         layout = QVBoxLayout()
         layout.addWidget(QLabel("输入文件："))
         layout.addWidget(self.input_filename)
@@ -62,8 +56,6 @@ class TeachingPlanGenerator(QWidget):
         layout.addWidget(generate_button)
         layout.addWidget(generate_graph_button)
         layout.addWidget(show_table_button)
-        layout.addWidget(self.modify_course_button)
-        layout.addWidget(self.modify_max_credits_button)
 
         self.setLayout(layout)
         self.setWindowTitle("课程教学计划生成器")
@@ -147,7 +139,14 @@ class TeachingPlanGenerator(QWidget):
 
     def show_table(self):
         if self.teaching_plan is not None:
-            self.table_window = TeachingPlanTable(self.teaching_plan)
+            self.table_window = TeachingPlanTable(self.teaching_plan, self.course_info)
+            self.modify_course_button = QPushButton("修改课程", self.table_window)
+            self.modify_course_button.clicked.connect(self.modify_courses)
+            self.modify_max_credits_button = QPushButton("修改每学期最大学分限制", self.table_window)
+            self.modify_max_credits_button.clicked.connect(self.modify_max_credits)
+
+            self.table_window.layout().addWidget(self.modify_course_button)
+            self.table_window.layout().addWidget(self.modify_max_credits_button)
             self.table_window.show()
 
     def modify_courses(self):
@@ -158,6 +157,7 @@ class TeachingPlanGenerator(QWidget):
         if result == QDialog.Accepted:
             # 用户点击了“确认”按钮，进行相应的处理
             # 在这里更新课程数据结构，然后重新生成教学计划
+            self.update_course_info(dialog.course_name, dialog.credits, dialog.prereqs)
             self.generate_new_plan()
 
     def modify_max_credits(self):
@@ -168,6 +168,7 @@ class TeachingPlanGenerator(QWidget):
         if result == QDialog.Accepted:
             # 用户点击了“确认”按钮，进行相应的处理
             # 在这里更新最大学分限制数据结构，然后重新生成教学计划
+            self.max_credits_per_semester = float(dialog.max_credits)
             self.generate_new_plan()
 
     def generate_new_plan(self):
@@ -189,6 +190,14 @@ class TeachingPlanGenerator(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
 
+    def update_course_info(self, course_name, credits, prereqs):
+        if course_name in self.course_info:
+            self.course_info[course_name].credits = float(credits)
+            self.course_info[course_name].prereqs = prereqs.split('，')
+        else:
+            # 如果课程不存在，则创建一个新的课程对象
+            self.course_info[course_name] = Course(course_name, float(credits), prereqs.split('，'))
+
 
 # 新增的部分 - 用于修改课程的对话框
 class ModifyCoursesDialog(QDialog):
@@ -202,16 +211,16 @@ class ModifyCoursesDialog(QDialog):
         form_layout = QFormLayout(self)
 
         # 示例：添加课程名称输入框
-        course_name_edit = QLineEdit(self)
-        form_layout.addRow("课程名称:", course_name_edit)
+        self.course_name_edit = QLineEdit(self)
+        form_layout.addRow("课程名称:", self.course_name_edit)
 
         # 示例：添加学分输入框
-        credits_edit = QLineEdit(self)
-        form_layout.addRow("学分:", credits_edit)
+        self.credits_edit = QLineEdit(self)
+        form_layout.addRow("学分:", self.credits_edit)
 
         # 示例：添加先修课程输入框
-        prereqs_edit = QLineEdit(self)
-        form_layout.addRow("先修课程 (以逗号分隔):", prereqs_edit)
+        self.prereqs_edit = QLineEdit(self)
+        form_layout.addRow("先修课程 (以逗号分隔):", self.prereqs_edit)
 
         # 示例：添加确认按钮
         confirm_button = QPushButton("确认", self)
@@ -219,6 +228,18 @@ class ModifyCoursesDialog(QDialog):
         form_layout.addWidget(confirm_button)
 
         self.setLayout(form_layout)
+
+    @property
+    def course_name(self):
+        return self.course_name_edit.text()
+
+    @property
+    def credits(self):
+        return self.credits_edit.text()
+
+    @property
+    def prereqs(self):
+        return self.prereqs_edit.text()
 
 
 # 新增的部分 - 用于修改最大学分限制的对话框
@@ -233,8 +254,8 @@ class ModifyMaxCreditsDialog(QDialog):
         form_layout = QFormLayout(self)
 
         # 示例：添加最大学分限制输入框
-        max_credits_edit = QLineEdit(self)
-        form_layout.addRow("最大学分限制:", max_credits_edit)
+        self.max_credits_edit = QLineEdit(self)
+        form_layout.addRow("最大学分限制:", self.max_credits_edit)
 
         # 示例：添加确认按钮
         confirm_button = QPushButton("确认", self)
@@ -242,6 +263,10 @@ class ModifyMaxCreditsDialog(QDialog):
         form_layout.addWidget(confirm_button)
 
         self.setLayout(form_layout)
+
+    @property
+    def max_credits(self):
+        return self.max_credits_edit.text()
 
 
 if __name__ == '__main__':
