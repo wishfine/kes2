@@ -9,7 +9,7 @@ class Course:
         self.course_name = course_name
         self.credits = credits
         self.prereqs = prereqs
-        self.semester = 0  # 新增属性，表示该课程在第几学期
+        self.semester = 0
 
 class TeachingPlanGenerator(QWidget):
     def __init__(self):
@@ -44,10 +44,14 @@ class TeachingPlanGenerator(QWidget):
         layout.addWidget(browse_output_button)
         layout.addWidget(QLabel("生成方式:"))
         layout.addWidget(self.generate_mode_combo)
-        self.generate_mode_combo.setFixedWidth(600)  # 设置宽度为200像素
-        self.generate_mode_combo.setFixedHeight(60)  # 设置高度为30像素
+        self.generate_mode_combo.setFixedWidth(600)
+        self.generate_mode_combo.setFixedHeight(60)
         layout.addWidget(generate_button)
         layout.addWidget(generate_graph_button)
+
+        self.teaching_plan_label = QLabel(self)
+        self.teaching_plan_label.setWordWrap(True)
+        layout.addWidget(self.teaching_plan_label)
 
         self.setLayout(layout)
         self.setWindowTitle("课程教学计划生成器")
@@ -88,9 +92,23 @@ class TeachingPlanGenerator(QWidget):
                                                                                         course_info)
 
                 output_teaching_plan(teaching_plan, course_info, output_file)
+
+                self.display_teaching_plan_details(teaching_plan)
+
                 QMessageBox.information(self, "成功", "教学计划已生成成功！")
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
+
+    def display_teaching_plan_details(self, teaching_plan):
+        details_text = "教学计划详细信息：\n"
+        for semester_number, courses in teaching_plan.items():
+            details_text += f"\n学期 {semester_number}:\n"
+            details_text += f"所修学分: {sum(course.credits for course in courses):.2f}\n"
+            details_text += "课程列表:\n"
+            for course in courses:
+                details_text += f"{course.course_name} - {course.credits} 学分\n"
+
+        self.teaching_plan_label.setText(details_text)
 
     def generate_graph(self,course_semesters):
         input_file = self.input_filename.text()
@@ -130,7 +148,6 @@ class TeachingPlanGenerator(QWidget):
                 QMessageBox.information(self, "成功", "有向图已生成成功！")
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
-
 
 def read_input_file(filename):
     try:
@@ -203,7 +220,7 @@ def generate_teaching_plan(topological_order, max_credits_per_semester, max_seme
         if semester_number > max_semesters:
             raise Exception("无法满足学分限制和课程先修条件。")
 
-        course.semester = semester_number  # 更新课程的学期信息
+        course.semester = semester_number
         teaching_plan[semester_number].append(course)
         semester_credits[semester_number] += course.credits
         course_semesters[course_name] = semester_number
@@ -236,7 +253,7 @@ def generate_balanced_teaching_plan_v2(topological_order, max_credits_per_semest
         if semester_number > max_semesters:
             raise Exception("无法满足学分限制和课程先修条件。")
 
-        course.semester = semester_number  # 更新课程的学期信息
+        course.semester = semester_number
         teaching_plan[semester_number].append(course)
         remaining_credits[semester_number] += course.credits
         course_semesters[course_name] = semester_number
