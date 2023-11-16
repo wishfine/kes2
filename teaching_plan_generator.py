@@ -1,7 +1,7 @@
 # teaching_plan_generator.py
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QComboBox, \
-    QTableWidget, QTableWidgetItem, QDialog, QFormLayout
+    QTableWidget, QTableWidgetItem, QDialog, QFormLayout, QMessageBox
 from collections import defaultdict
 import re
 import graphviz
