@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QComboBox, \
-    QScrollArea, QTextBrowser, QMessageBox
+    QScrollArea, QTextBrowser, QMessageBox, QTableWidget, QTableWidgetItem, QHBoxLayout, QVBoxLayout
 from collections import defaultdict
 import re
 import graphviz
@@ -38,8 +38,8 @@ class TeachingPlanGenerator(QWidget):
         generate_graph_button = QPushButton("生成有向图", self)
         generate_graph_button.clicked.connect(self.generate_graph)
 
-        self.teaching_plan_browser = QTextBrowser(self)
-        self.teaching_plan_browser.setOpenExternalLinks(True)
+        show_table_button = QPushButton("显示课表", self)
+        show_table_button.clicked.connect(self.show_table)
 
         layout = QVBoxLayout()
         layout.addWidget(QLabel("输入文件："))
@@ -54,16 +54,14 @@ class TeachingPlanGenerator(QWidget):
         self.generate_mode_combo.setFixedHeight(60)
         layout.addWidget(generate_button)
         layout.addWidget(generate_graph_button)
-
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.teaching_plan_browser)
-
-        layout.addWidget(scroll_area)
+        layout.addWidget(show_table_button)
 
         self.setLayout(layout)
         self.setWindowTitle("课程教学计划生成器")
         self.setGeometry(600, 600, 800, 600)
+
+        # Variables to store teaching plan for later display
+        self.teaching_plan = None
 
     def browse_input_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "选择输入文件", "", "Text Files (*.txt)")
@@ -100,23 +98,11 @@ class TeachingPlanGenerator(QWidget):
                                                                                         course_info)
 
                 output_teaching_plan(teaching_plan, course_info, output_file)
-
-                self.display_teaching_plan_details(teaching_plan)
+                self.teaching_plan = teaching_plan  # Store teaching plan for later display
 
                 QMessageBox.information(self, "成功", "教学计划已生成成功！")
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
-
-    def display_teaching_plan_details(self, teaching_plan):
-        details_text = "教学计划详细信息：\n"
-        for semester_number, courses in teaching_plan.items():
-            details_text += f"\n学期 {semester_number}:\n"
-            details_text += f"所修学分: {sum(course.credits for course in courses):.2f}\n"
-            details_text += "课程列表:\n"
-            for course in courses:
-                details_text += f"{course.course_name} - {course.credits} 学分\n"
-
-        self.teaching_plan_browser.setPlainText(details_text)
 
     def generate_graph(self,course_semesters):
         input_file = self.input_filename.text()
@@ -156,6 +142,46 @@ class TeachingPlanGenerator(QWidget):
                 QMessageBox.information(self, "成功", "有向图已生成成功！")
         except Exception as e:
             QMessageBox.critical(self, "错误", str(e))
+
+    def show_table(self):
+        if self.teaching_plan is not None:
+            self.table_window = TeachingPlanTable(self.teaching_plan)
+            self.table_window.show()
+
+
+class TeachingPlanTable(QWidget):
+    def __init__(self, teaching_plan):
+        super().__init__()
+
+        self.teaching_plan = teaching_plan
+
+        self.init_ui()
+
+    def init_ui(self):
+        table = QTableWidget(self)
+        table.setColumnCount(3)  # Assuming three columns: Course Name, Credits, Semester
+
+        headers = ["课程名称", "学分", "学期"]
+        table.setHorizontalHeaderLabels(headers)
+
+        row = 0
+        for semester, courses in self.teaching_plan.items():
+            for course in courses:
+                table.insertRow(row)
+                table.setItem(row, 0, QTableWidgetItem(course.course_name))
+                table.setItem(row, 1, QTableWidgetItem(str(course.credits)))
+                table.setItem(row, 2, QTableWidgetItem(str(course.semester)))
+                row += 1
+
+        table.resizeColumnsToContents()
+
+        layout = QVBoxLayout()
+        layout.addWidget(table)
+
+        self.setLayout(layout)
+        self.setWindowTitle("课程教学计划表格")
+        self.setGeometry(600, 600, 600, 400)
+
 
 
 def read_input_file(filename):
